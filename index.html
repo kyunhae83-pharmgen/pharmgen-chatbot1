@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>팜젠사이언스 거래처 조회 [CSO용]</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4ff;
+    --bg2: #ffffff;
+    --bg3: #f4f7ff;
+    --border: #dde5f4;
+    --accent: #0077e6;
+    --accent2: #005bbf;
+    --accent3: #00aaff;
+    --green: #0a9e6e;
+    --green-bg: #edfaf4;
+    --green-border: #b6e8d4;
+    --red: #d93025;
+    --red-bg: #fff0ee;
+    --red-border: #f4c0bb;
+    --yellow: #c67f00;
+    --yellow-bg: #fff8e6;
+    --yellow-border: #f5dfa0;
+    --text: #0f1f3d;
+    --text2: #3a4f70;
+    --text3: #7a8fb0;
+    --shadow: 0 2px 16px rgba(0,80,200,0.08);
+    --shadow-lg: 0 8px 32px rgba(0,80,200,0.12);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    background-image:
+      radial-gradient(ellipse at 10% 10%, rgba(0,119,230,0.07) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 90%, rgba(0,170,255,0.05) 0%, transparent 50%);
+  }
+  .container { width:100%; max-width:500px; }
+
+  .header { text-align: center; margin-bottom: 28px; animation: fadeDown 0.5s ease; }
+  .logo-wrap { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .logo-img { width: auto; height: 56px; object-fit: contain; filter: none; }
+  .logo-text-wrap { text-align: left; }
+  .logo-en { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.18em; text-transform: uppercase; }
+  .logo-kr { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: 0.04em; }
+  .header-divider { width: 40px; height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent3)); border-radius: 2px; margin: 10px auto; }
+  .header h1 { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .header p  { font-size: 12px; color: var(--text3); }
+
+  .search-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+    animation: fadeUp 0.5s ease 0.1s both;
+  }
+  .search-label { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; display: block; }
+  .search-row { display: flex; gap: 10px; }
+  .search-input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    letter-spacing: 0.05em;
+  }
+  .search-input::placeholder { color: var(--text3); }
+  .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,119,230,0.12); }
+  .search-btn {
+    background: linear-gradient(135deg, #0077e6, #005bbf);
+    border: none; border-radius: 10px; padding: 12px 22px;
+    color: white; font-family: 'Noto Sans KR', sans-serif;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0,119,230,0.25);
+  }
+  .search-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,119,230,0.35); }
+  .search-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .search-hint { margin-top: 8px; font-size: 12px; color: var(--text3); }
+
+  .loading { display: none; text-align: center; padding: 28px; }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 10px;
+  }
+  .loading p { font-size: 13px; color: var(--text3); }
+
+  .result-card {
+    display: none;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    animation: fadeUp 0.4s ease;
+    box-shadow: var(--shadow-lg);
+  }
+  .result-top {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(135deg, #f4f8ff, #ffffff);
+  }
+  .result-name { font-size: 17px; font-weight: 700; color: var(--text); }
+  .result-type { font-size: 12px; color: var(--text3); margin-top: 3px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 14px; border-radius: 20px;
+    font-size: 13px; font-weight: 600; white-space: nowrap;
+  }
+  .badge-green  { background: var(--green-bg);  color: var(--green);  border: 1px solid var(--green-border); }
+  .badge-red    { background: var(--red-bg);    color: var(--red);    border: 1px solid var(--red-border); }
+  .badge-yellow { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow-border); }
+
+  .verdict-big { padding: 28px 24px; text-align: center; }
+  .verdict-icon { font-size: 48px; margin-bottom: 12px; }
+  .verdict-main { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
+  .verdict-main.available { color: var(--green); }
+  .verdict-main.blocked   { color: var(--red); }
+  .verdict-main.blocked-retail { color: var(--yellow); }
+  .verdict-sub { font-size: 13px; color: var(--text2); line-height: 1.8; }
+
+  .required-box {
+    margin: 16px 24px 24px;
+    background: var(--green-bg);
+    border: 1px solid var(--green-border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-align: left;
+  }
+  .required-box.hidden { display: none; }
+  .required-title { font-size: 12px; font-weight: 700; color: var(--green); margin-bottom: 8px; }
+  .required-list  { font-size: 13px; color: var(--text2); line-height: 1.9; }
+  .required-divider { margin: 8px 0; border: none; border-top: 1px solid var(--green-border); }
+  .required-system { font-size: 13px; color: var(--text2); }
+  .required-system strong { color: var(--text); }
+
+  .biz-chip {
+    display: inline-block; margin-top: 12px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; color: var(--text3);
+  }
+
+  .not-found {
+    display: none; background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden;
+    animation: fadeUp 0.4s ease; box-shadow: var(--shadow-lg);
+  }
+  .not-found-top {
+    padding: 28px 24px; text-align: center;
+    background: linear-gradient(135deg, #f4f8ff, #ffffff);
+    border-bottom: 1px solid var(--border);
+  }
+  .not-found-icon { font-size: 44px; margin-bottom: 12px; }
+  .not-found h3 { font-size: 17px; font-weight: 700; color: var(--green); margin-bottom: 6px; }
+  .not-found p  { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+  .update-time { text-align: center; font-size: 11px; color: var(--text3); margin-top: 10px; }
+  .error-box {
+    display: none; background: var(--red-bg); border: 1px solid var(--red-border);
+    border-radius: 12px; padding: 14px 18px; font-size: 13px; color: var(--red);
+  }
+
+  .history { margin-top: 16px; }
+  .history-title { font-size: 11px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+  .history-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .history-chip {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--text2); cursor: pointer; transition: border-color 0.15s, color 0.15s;
+  }
+  .history-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+  @keyframes fadeUp   { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeDown { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes spin     { to { transform: rotate(360deg); } }
+  @media (max-width: 480px) { .search-btn { padding: 12px 14px; font-size: 13px; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="logo-wrap">
+      <img class="logo-img" src="data:image/png;base64,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" alt="팜젠사이언스 로고" />
+      <div class="logo-text-wrap" style="display:none;">
+        <div class="logo-en">Pharmgen Science</div>
+        <div class="logo-kr">팜젠사이언스</div>
+      </div>
+    </div>
+    <div class="header-divider"></div>
+    <h1>거래처 이관 가능 여부 조회</h1>
+    <p>사업자번호를 입력하면 이관 가능 여부를 즉시 확인합니다</p>
+  </div>
+
+  <div class="search-box">
+    <span class="search-label">사업자번호 조회</span>
+    <div class="search-row">
+      <input type="text" class="search-input" id="bizInput" placeholder="000-00-00000" maxlength="12" autocomplete="off" />
+      <button class="search-btn" id="searchBtn" onclick="search()">조회</button>
+    </div>
+    <div class="search-hint">하이픈(-) 포함 또는 미포함 모두 입력 가능합니다</div>
+  </div>
+
+  <div class="loading" id="loading"><div class="spinner"></div><p>조회 중...</p></div>
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="result-card" id="resultCard">
+    <div class="result-top">
+      <div>
+        <div class="result-name" id="resultName"></div>
+        <div class="result-type" id="resultType"></div>
+      </div>
+      <div class="badge" id="resultBadge"></div>
+    </div>
+    <div class="verdict-big">
+      <div class="verdict-icon" id="verdictIcon"></div>
+      <div class="verdict-main" id="verdictMain"></div>
+      <div class="verdict-sub"  id="verdictSub"></div>
+      <div class="biz-chip"     id="bizChip"></div>
+    </div>
+    <div class="required-box hidden" id="requiredBox">
+      <div class="required-title">📋 거래처 등록 요청 시 필수자료</div>
+      <div class="required-list">· 사업자등록증<br>· 해당 실적자료</div>
+      <hr class="required-divider">
+      <div class="required-system">거래처 등록 요청 → <strong>SS-Compare</strong></div>
+    </div>
+  </div>
+
+  <div class="not-found" id="notFound">
+    <div class="not-found-top">
+      <div class="not-found-icon">✅</div>
+      <h3>신규 거래 가능한 거래처입니다</h3>
+      <p>등록되지 않은 거래처로 신규 거래가 가능합니다.</p>
+    </div>
+    <div class="required-box" style="margin:16px;">
+      <div class="required-title">📋 거래처 등록 요청 시 필수자료</div>
+      <div class="required-list">· 사업자등록증<br>· 해당 실적자료</div>
+      <hr class="required-divider">
+      <div class="required-system">거래처 등록 요청 → <strong>SS-Compare</strong></div>
+    </div>
+  </div>
+
+  <div class="update-time" id="updateTime"></div>
+
+  <div class="history" id="historyArea" style="display:none;">
+    <div class="history-title">최근 조회</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+</div>
+<script>
+  const API_URL = 'https://script.google.com/macros/s/AKfycbwcKvQDFyb0LQteHCcCpeQPaSiOO7JsZrT6WIwFsegSo-eWQKRt8brxmAeWwSG_kL5O/exec';
+  let history = JSON.parse(localStorage.getItem('biz_history_cso') || '[]');
+
+  document.getElementById('bizInput').addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
+  document.getElementById('bizInput').addEventListener('input', e => {
+    let v = e.target.value.replace(/[^0-9]/g, '');
+    if (v.length > 3 && v.length <= 5)  v = v.slice(0,3) + '-' + v.slice(3);
+    else if (v.length > 5)              v = v.slice(0,3) + '-' + v.slice(3,5) + '-' + v.slice(5,10);
+    e.target.value = v;
+  });
+
+  async function search() {
+    const input = document.getElementById('bizInput').value.trim();
+    if (!input) { showError('사업자번호를 입력해주세요.'); return; }
+    hideAll(); show('loading');
+    document.getElementById('searchBtn').disabled = true;
+    try {
+      const res  = await fetch(API_URL + '?biz_no=' + encodeURIComponent(input));
+      const data = await res.json();
+      hide('loading');
+      document.getElementById('searchBtn').disabled = false;
+      if (data.found) { renderResult(data.data); addHistory(input); }
+      else show('notFound');
+    } catch {
+      hide('loading');
+      document.getElementById('searchBtn').disabled = false;
+      showError('조회 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    }
+  }
+
+  function renderResult(d) {
+    document.getElementById('resultName').textContent = d['거래처명'] || '-';
+    document.getElementById('resultType').textContent = d['거래처종류'] || '';
+    document.getElementById('bizChip').textContent    = d['사업자번호'] || '';
+
+    const verdict = d['최종판정'] || '';
+    const badge   = document.getElementById('resultBadge');
+    const reqBox  = document.getElementById('requiredBox');
+
+    reqBox.classList.add('hidden');
+
+    if (verdict === '이관가능') {
+      badge.className = 'badge badge-green'; badge.textContent = '✅ 이관가능';
+      document.getElementById('verdictIcon').textContent = '✅';
+      document.getElementById('verdictMain').className   = 'verdict-main available';
+      document.getElementById('verdictMain').textContent = '이관 가능합니다';
+      document.getElementById('verdictSub').textContent  = '해당 거래처는 현재 팜젠사이언스와\n거래 이력이 없어 이관이 가능합니다.';
+      reqBox.classList.remove('hidden');
+    } else if (verdict.includes('소매 내부거래중')) {
+      badge.className = 'badge badge-yellow'; badge.textContent = '⚠️ 거래불가';
+      document.getElementById('verdictIcon').textContent = '⚠️';
+      document.getElementById('verdictMain').className   = 'verdict-main blocked-retail';
+      document.getElementById('verdictMain').textContent = '이관이 불가합니다';
+      document.getElementById('verdictSub').textContent  = '해당 거래처는 현재 팜젠사이언스 내부에서\n거래가 진행 중입니다.';
+    } else {
+      badge.className = 'badge badge-red'; badge.textContent = '🚫 거래불가';
+      document.getElementById('verdictIcon').textContent = '🚫';
+      document.getElementById('verdictMain').className   = 'verdict-main blocked';
+      document.getElementById('verdictMain').textContent = '이관이 불가합니다';
+      document.getElementById('verdictSub').textContent  = '해당 거래처는 현재 다른 CSO와\n거래가 진행 중입니다.';
+    }
+
+    if (d['업데이트일시']) document.getElementById('updateTime').textContent = '데이터 기준: ' + d['업데이트일시'];
+    show('resultCard');
+  }
+
+  function addHistory(biz) {
+    history = [biz, ...history.filter(h => h !== biz)].slice(0, 5);
+    localStorage.setItem('biz_history_cso', JSON.stringify(history));
+    renderHistory();
+  }
+  function renderHistory() {
+    if (history.length === 0) return;
+    document.getElementById('historyArea').style.display = 'block';
+    document.getElementById('historyList').innerHTML = history.map(h =>
+      '<span class="history-chip" onclick="searchBiz(\'' + h + '\')">' + h + '</span>'
+    ).join('');
+  }
+  function searchBiz(biz) { document.getElementById('bizInput').value = biz; search(); }
+  function showError(msg) { hide('loading'); const b = document.getElementById('errorBox'); b.textContent = msg; b.style.display = 'block'; }
+  function show(id) { document.getElementById(id).style.display = 'block'; }
+  function hide(id) { document.getElementById(id).style.display = 'none'; }
+  function hideAll() { ['loading','resultCard','notFound','errorBox'].forEach(hide); document.getElementById('updateTime').textContent = ''; }
+  renderHistory();
+</script>
+</body>
+</html>
